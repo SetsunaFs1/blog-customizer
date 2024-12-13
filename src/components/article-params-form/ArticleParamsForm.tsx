@@ -15,7 +15,7 @@ import {
 import { Text } from 'src/ui/text';
 import { Separator } from 'src/ui/separator';
 import styles from './ArticleParamsForm.module.scss';
-import { useState, SyntheticEvent } from 'react';
+import { useState, SyntheticEvent, useEffect, useRef } from 'react';
 
 interface IProps {
 	onSubmit: (styles: ArticleStateType) => void;
@@ -78,14 +78,40 @@ export const ArticleParamsForm = (props: IProps) => {
 		props.onSubmit(newArticleState);
 	};
 
+	const ref = useRef<HTMLDivElement | null>(null);
+	useEffect(() => {
+		if (!isOpen) return;
+
+		const handleOverlay = (event: MouseEvent) => {
+			if (
+				event.target instanceof Node &&
+				ref.current &&
+				!ref.current.contains(event.target)
+			) {
+				setIsOpen(false);
+			}
+		};
+		window.addEventListener('mousedown', handleOverlay);
+
+		return () => {
+			window.removeEventListener('mousedown', handleOverlay);
+		};
+	}, [isOpen, ref]);
+
 	return (
-		<>
-			<ArrowButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
+		<div ref={ref}>
+			<ArrowButton
+				isOpen={isOpen}
+				onClick={() => setIsOpen((prevState) => !prevState)}
+			/>
 			<aside
 				className={`${styles.container} ${
 					isOpen ? styles.container_open : ''
 				}`}>
-				<form className={styles.form}>
+				<form
+					className={styles.form}
+					onSubmit={handleSubmit}
+					onReset={handleReset}>
 					<Text weight={800} size={31} uppercase={true}>
 						{'Задайте параметры'}
 					</Text>
@@ -117,21 +143,11 @@ export const ArticleParamsForm = (props: IProps) => {
 						options={contentWidthArr}
 						title='ширина контента'></Select>
 					<div className={styles.bottomContainer}>
-						<Button
-							title='Сбросить'
-							htmlType='reset'
-							type='clear'
-							onClick={handleReset}
-						/>
-						<Button
-							title='Применить'
-							htmlType='submit'
-							type='apply'
-							onClick={handleSubmit}
-						/>
+						<Button title='Сбросить' htmlType='reset' type='clear' />
+						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
 				</form>
 			</aside>
-		</>
+		</div>
 	);
 };
